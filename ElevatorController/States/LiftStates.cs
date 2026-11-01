@@ -84,8 +84,11 @@
 
     public class DoorsState : LiftState
     {
-        private int phase = 0;     // 0 = opening, 1 = waiting, 2 = closing
+        private const int WaitTicks = 125;     // 5 seconds with the doors fully open (125 x 40 ms)
+
+        private int phase = 0;                 // 0 = opening, 1 = waiting, 2 = closing
         private int waited = 0;
+        private bool closeWanted = false;      // "Close" was pressed while the doors were still opening
 
         public override string Name
         {
@@ -105,14 +108,14 @@
                 if (lift.DoorOpen >= 100)
                 {
                     lift.DoorOpen = 100;
-                    phase = 1;
+                    phase = closeWanted ? 2 : 1;   // close at once if the button was already pressed
                     lift.Notify("Doors open at floor " + lift.Floor);
                 }
             }
             else if (phase == 1)
             {
                 waited++;
-                if (waited >= 25) phase = 2;
+                if (waited >= WaitTicks) phase = 2;
             }
             else
             {
@@ -139,20 +142,22 @@
         // "Open" button: hold the doors open, or reopen them if they are closing
         public override void OpenDoors(Lift lift)
         {
+            closeWanted = false;
             if (phase == 1) waited = 0;
             else if (phase == 2) phase = 0;
         }
 
-        // "Close" button: stop waiting and close now
+        // "Close" button: close early (or as soon as the doors are fully open)
         public override void CloseDoors(Lift lift)
         {
-            if (phase == 1) waited = 25;
+            if (phase == 1) waited = WaitTicks;
+            else if (phase == 0) closeWanted = true;
         }
 
         public override int RemainingTicks(Lift lift)
         {
-            if (phase == 0) return (100 - lift.DoorOpen) / 5 + 25 + 20;
-            if (phase == 1) return (25 - waited) + 20;
+            if (phase == 0) return (100 - lift.DoorOpen) / 5 + WaitTicks + 20;
+            if (phase == 1) return (WaitTicks - waited) + 20;
             return lift.DoorOpen / 5;
         }
 

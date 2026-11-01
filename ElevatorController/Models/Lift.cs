@@ -12,7 +12,7 @@ namespace ElevatorController
     public class Lift
     {
         public const int TravelTicks = 50;     // timer ticks to go from one floor to the other
-        public const int DoorTicks = 65;       // timer ticks for doors to open, wait and close
+        public const int DoorTicks = 165;       // 20 opening + 125 waiting + 20 closing
         public const int NotAvailable = 99999; // "this lift cannot take the request"
 
         public string Name { get; private set; }
